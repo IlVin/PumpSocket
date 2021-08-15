@@ -26,50 +26,35 @@ void setup() {
 }
 
 void loop() {
-  int WORK_DURATION = 60 * 3 / 2;
-  int WAIT_DURATION = 60 * 4;
-  
-  char secBuffer [5];
+  int WORK_DURATION = 30;
+  int WAIT_DURATION = 180;
+  char lcdBuffer [30];
 
   // Включаем розетку
   digitalWrite(R1, HIGH);
   digitalWrite(R2, HIGH);
 
+  // Рабочий цикл
   lcd.begin(16, 2);
-
-  lcd.setCursor(0, 0);
-  lcd.print("MODE: WORK");   
-
-  // Ждем 60 сек
-  for (int sec = 0; sec < WORK_DURATION; sec ++) {
-    lcd.setCursor(0, 1);
-    delay(100);  
-    int n = sprintf(secBuffer, "%d", sec);
-    secBuffer[n] = '\0';
-    lcd.print("TIME: ");
-    lcd.print(secBuffer); 
-    lcd.print("     ");
-    delay(900);  
+  for (int sec = WORK_DURATION; sec > 0; sec--) {
+    int n = sprintf(lcdBuffer, "ON :%ds         ", sec);
+    lcdBuffer[16] = '\0';
+    lcd.setCursor(0, 0);
+    lcd.print(lcdBuffer);
+    delay(1000);
   }
 
   // Выключаем розетку
   digitalWrite(R1, LOW);
   digitalWrite(R2, LOW);
 
+  // Цикл ожидания
   lcd.begin(16, 2);
-
-  lcd.setCursor(0, 0);
-  lcd.print("MODE: WAIT");   
-
-  // Ждем 60 сек
-  for (int sec = 0; sec < WAIT_DURATION; sec ++) {
-    lcd.setCursor(0, 1);
-    delay(100);  
-    int n = sprintf(secBuffer, "%d", sec);
-    secBuffer[n] = '\0';
-    lcd.print("TIME: ");
-    lcd.print(secBuffer); 
-    lcd.print("     ");
-    delay(900);  
+  for (int sec = WAIT_DURATION; sec > 0; sec--) {
+    int n = sprintf(lcdBuffer, "OFF:%ds         ", sec);
+    lcdBuffer[16] = '\0';
+    lcd.setCursor(0, 0);
+    lcd.print(lcdBuffer);
+    delay(1000);
   }
 }
