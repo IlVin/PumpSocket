@@ -13,6 +13,8 @@
 // Тайминги
 #define ON_DURATION 30
 #define OFF_DURATION 200
+#define OL_OFF_DURATION 900
+#define TRAN_DURATION 1
 
 // Пробники тока и напряжения //
 long I1 = 0;
@@ -25,6 +27,7 @@ long sec;
 
 long last_I1 = 0;
 long last_I2 = 0;
+bool isOverLoad = false;
 
 ///////////////////////////
 
@@ -79,9 +82,13 @@ void showInfo() {
     n = sprintf(lcdBuffer, "%d : %d           ", I1, I2);
     lcdBuffer[16] = '\0';
     lcd.write(lcdBuffer);
+    if (isOverLoad) {
+      lcd.setCursor(14, 1);
+      lcd.print("OL");
+    }
 }
 
-enum STATE { POWER_ON, WAIT_LOAD, WORK, POWER_OFF, PAUSE };
+enum STATE { POWER_ON, WAIT_LOAD, TRAN, WORK, POWER_OFF, PAUSE };
 
 STATE state;
 
@@ -99,6 +106,16 @@ void state_wait_load() {
   sec = ctx_wait.diffMs / 1000;
   if (I1 > 300 || I2 > 300) {
     lcd.begin(16, 2);
+    ctx_wait.startMs = millis();
+    state = TRAN;
+  }
+}
+
+void state_wait_transition_process() {
+  statusString = "TRAN";
+  ctx_wait.diffMs = ctx_wait.startMs + 1000 * TRAN_DURATION - millis();
+  sec = ctx_wait.diffMs / 1000;
+  if (ctx_wait.diffMs <= 0) {
     last_I1 = I1;
     last_I2 = I2;
     ctx_wait.startMs = millis();
@@ -110,6 +127,13 @@ void state_work() {
   statusString = " ON ";
   ctx_wait.diffMs = ctx_wait.startMs + 1000 * ON_DURATION - millis();
   sec = ctx_wait.diffMs / 1000;
+  // Выключение по перегрузке
+  isOverLoad = false;
+  if (I1 > 3700 || I2 > 3700) {
+    isOverLoad = true;
+    state = POWER_OFF;
+  }
+  // Выключение по таймеру
   if (ctx_wait.diffMs <= 0) {
     state = POWER_OFF;
   }
@@ -122,8 +146,8 @@ void state_work() {
     state = POWER_OFF;
   }
   // При повышении давления в системе насос потребляет больше тока
-  last_I1 = I1;
-  last_I2 = I2;
+  if (last_I1 < I1) last_I1 = I1;
+  if (last_I2 < I2) last_I2 = I2;
 }
 
 void state_power_off() {
@@ -136,7 +160,7 @@ void state_power_off() {
 
 void state_pause() {
   statusString = "OFF ";
-  ctx_wait.diffMs = ctx_wait.startMs + 1000 * OFF_DURATION - millis();
+  ctx_wait.diffMs = ctx_wait.startMs + 1000 * (isOverLoad ? OL_OFF_DURATION : OFF_DURATION) - millis();
   sec = ctx_wait.diffMs / 1000;
   if (ctx_wait.diffMs <= 0) {
     state = POWER_ON;
@@ -158,6 +182,7 @@ void loop() {
   switch (state) {
     case POWER_ON: state_power_on(); break;
     case WAIT_LOAD: state_wait_load(); break;
+    case TRAN: state_wait_transition_process(); break;
     case WORK: state_work(); break;
     case POWER_OFF: state_power_off(); break;
     case PAUSE: state_pause(); break;
