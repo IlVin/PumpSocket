@@ -29,9 +29,6 @@ long last_I1 = 0;
 long last_I2 = 0;
 bool isOverLoad = false;
 
-///////////////////////////
-
-
 // настраиваем дисплей, указывая пины к которым подключен дисплей
 LiquidCrystal lcd { 4, 0, 2, 14, 12, 13 }; 
 char lcdBuffer [30];
@@ -41,6 +38,11 @@ struct {
   long diffMs;
 } ctx_wait;
 
+
+enum STATE { POWER_ON, WAIT_LOAD, TRAN, WORK, POWER_OFF, PAUSE };
+STATE state;
+
+// /////////////////////////////////////
 
 // Парсит показания пробников
 void parseString(std::string S){
@@ -80,17 +82,13 @@ void showInfo() {
 
     lcd.setCursor(0, 1);
     n = sprintf(lcdBuffer, "%d : %d           ", I1, I2);
+    if (isOverLoad) {
+      lcdBuffer[14] = 'O';
+      lcdBuffer[15] = 'L';
+    }
     lcdBuffer[16] = '\0';
     lcd.write(lcdBuffer);
-    if (isOverLoad) {
-      lcd.setCursor(14, 1);
-      lcd.print("OL");
-    }
 }
-
-enum STATE { POWER_ON, WAIT_LOAD, TRAN, WORK, POWER_OFF, PAUSE };
-
-STATE state;
 
 void state_power_on() {
   digitalWrite(R1, LOW);
