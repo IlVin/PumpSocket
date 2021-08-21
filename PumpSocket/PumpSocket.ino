@@ -14,7 +14,7 @@
 #define ON_DURATION 30
 #define OFF_DURATION 200
 #define OL_OFF_DURATION 900
-#define TRAN_DURATION 1
+#define TRAN_DURATION 3
 
 // Пробники тока и напряжения //
 long I1 = 0;
@@ -127,7 +127,7 @@ void state_work() {
   sec = ctx_wait.diffMs / 1000;
   // Выключение по перегрузке
   isOverLoad = false;
-  if (I1 > 3700 || I2 > 3700) {
+  if (I1 > 4000 || I2 > 4000) {
     isOverLoad = true;
     state = POWER_OFF;
   }
